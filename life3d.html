@@ -118,15 +118,13 @@ button:hover {
   text-align:center;
 }
 #traitsPanel {
-  position:absolute;
-  top:20px;
-  left:10px;
+  position:relative;
   background:#333;
   padding:8px;
   border-radius:8px;
-  width:150px;
+  width:90%;
+  margin:10px auto;
   font-size:13px;
-  z-index:5;
 }
 #actions {
   margin-top:10px;
@@ -309,7 +307,7 @@ function generateCharacter(){
   updateStats();
 }
 function updateStats(){
-  document.getElementById("strength").innerText=strength;
+  document.getElementById("strength").innerText=Math.floor(strength);
   document.getElementById("intelligence").innerText=intelligence;
   document.getElementById("coins").innerText=coins;
   document.getElementById("age").innerText=age;
@@ -387,6 +385,9 @@ function tickLoop(){
   const interval=setInterval(()=>{
     age++;
     lifespan+=strength*0.01;
+    if(age > 40){
+      strength -= 0.1;
+    }
     coins+=Math.floor(intelligence*0.05);
     updateEnv();
     updateStats();
