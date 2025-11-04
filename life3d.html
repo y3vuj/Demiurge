@@ -210,7 +210,11 @@ const names=[
   {name:"Abel",meaning:"Breath"},
   {name:"Abigail",meaning:"Father's joy"},
   {name:"Adeline",meaning:"Noble"},
-  {name:"Adrian",meaning:"Dark one"}
+  {name:"Adrian",meaning:"Dark one"},
+  {name:"Beatrix",meaning:"Bringer of joy"},
+  {name:"Caleb",meaning:"Faithful"},
+  {name:"Chloe",meaning:"Blooming"},
+  {name:"Damian",meaning:"To tame"}
 ];
 
 // ===== Thoughts =====
@@ -227,21 +231,27 @@ const buffItems=[
   {name:"Protein Shake: +2 Strength",strength:2,intelligence:0},
   {name:"Book of Wisdom: +3 Intelligence",strength:0,intelligence:3},
   {name:"Meditation Mat: +1 Strength +1 Intelligence",strength:1,intelligence:1},
-  {name:"Golden Idol: x2 Coins",effect:"multiplier",multiplier:2}
+  {name:"Golden Idol: x2 Coins",effect:"multiplier",multiplier:2},
+  {name:"Energy Drink: +1 Strength, +1 Lifespan",strength:1,intelligence:0,lifespan:1},
+  {name:"Gaming Console: +2 Intelligence, +1 Lifespan",strength:0,intelligence:2,lifespan:1}
 ];
 
 // ===== Life Events =====
 const lifeEvents=[
   {desc:"Found a rare book, gained knowledge!",strength:0,intelligence:2},
   {desc:"Got sick for a week, lost strength.",strength:-2,intelligence:0},
-  {desc:"Helped a friend, feel smarter.",strength:1,intelligence:1}
+  {desc:"Helped a friend, feel smarter.",strength:1,intelligence:1},
+  {desc:"Won a competition, gained strength!",strength:2,intelligence:0},
+  {desc:"Solved a riddle, gained intelligence!",strength:0,intelligence:2}
 ];
 
 // ===== Attributes =====
 const attributes=[
   {name:"Hyper Intelligent",desc:"+3 Intelligence, increases lifespan",strength:0,intelligence:3,lifespan:5},
   {name:"Chronic Fatigue",desc:"-2 Strength, decreases lifespan",strength:-2,intelligence:0,lifespan:-5},
-  {name:"Lucky",desc:"+1 coin multiplier",effect:"multiplier",multiplier:2}
+  {name:"Lucky",desc:"+1 coin multiplier",effect:"multiplier",multiplier:2},
+  {name:"Gifted",desc:"+2 to all stats",strength:2,intelligence:2,lifespan:2},
+  {name:"Unlucky",desc:"No coin multiplier",effect:"multiplier",multiplier:1}
 ];
 
 // ===== Variables =====
@@ -271,6 +281,11 @@ function animate3D(){
 }
 
 // ===== Game Functions =====
+window.onload = function() {
+  highScore = localStorage.getItem('demiurgeHighScore') ? parseInt(localStorage.getItem('demiurgeHighScore')) : 0;
+  document.getElementById('highscore').innerText = 'High Score (AGE): ' + highScore;
+}
+
 function startGame(){
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("game").style.display="block";
@@ -382,7 +397,10 @@ function gameOver(){
   document.getElementById("game").style.display="none";
   document.getElementById("gameOverScreen").style.display="block";
   document.getElementById("finalScore").innerText="Your Score: "+Math.floor(age)+" AGE";
-  if(age>highScore) highScore=age;
+  if(age>highScore){
+    highScore=age;
+    localStorage.setItem('demiurgeHighScore', highScore);
+  }
   document.getElementById("finalHighScore").innerText="High Score: "+Math.floor(highScore)+" AGE";
 }
 function restartGame(){
