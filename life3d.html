@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DEMIURGE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carrois+Gothic+SC&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+body {
+  margin:0;
+  height:100vh;
+  display:flex;
+  background:#222;
+  color:#fff;
+  font-family: monospace;
+  overflow:hidden;
+}
+#viewport3D {
+  flex:2;
+  background:#111;
+  margin:20px;
+  border-radius:8px;
+  height: calc(100vh - 40px);
+}
+#gameContainer {
+  flex:1;
+  width:33%;
+  margin:20px;
+  overflow-y:auto;
+  position:relative;
+}
+#titleScreen h1, #gameDEMIURGE {
+  font-family:'Carrois Gothic SC',sans-serif;
+  font-size:50px;
+  color:#ffcc66;
+  text-shadow:0 0 5px #ffcc66,0 0 10px #ffcc66,0 0 20px #ffcc66;
+  animation: glowPulse 2s infinite alternate;
+  text-align:center;
+}
+@keyframes glowPulse {
+  0% { text-shadow:0 0 5px #ffcc66,0 0 10px #ffcc66,0 0 20px #ffcc66; }
+  50% { text-shadow:0 0 15px #ffcc66,0 0 30px #ffcc66,0 0 40px #ffcc66; }
+  100% { text-shadow:0 0 5px #ffcc66,0 0 10px #ffcc66,0 0 20px #ffcc66; }
+}
+#titleScreen {
+  background:#333;
+  padding:40px;
+  border-radius:8px;
+  margin-bottom:20px;
+  text-align:center;
+}
+#charName {
+  font-family:'Carrois Gothic SC',sans-serif;
+  color:purple;
+  text-shadow:0 0 10px purple;
+  font-size:28px;
+  margin:5px 0;
+  text-align:center;
+}
+#charMeaning {
+  font-size:14px;
+  color:#ccc;
+  margin:0;
+  text-align:center;
+}
+#viewport {
+  width:100%;
+  height:200px;
+  position:relative;
+  border-radius:8px;
+  overflow:hidden;
+  margin-bottom:10px;
+  background:#000;
+}
+.layer {
+  position:absolute;
+  width:100%;
+  height:100%;
+  background-size:cover;
+  background-position:center;
+  z-index:1;
+  transition: background-image 2s ease;
+}
+#face {
+  position:absolute;
+  z-index:2;
+  font-size:50px;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+}
+button {
+  margin:5px;
+  padding:10px 15px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:#44aa88;
+  color:white;
+  font-weight:bold;
+  font-size:14px;
+}
+button:hover {
+  background:#66ccaa;
+}
+#store button {
+  background:#8888ff;
+}
+#store button:hover {
+  background:#aaaaff;
+}
+#quote {
+  font-style: italic;
+  margin:10px 0;
+  text-align:center;
+}
+#traitsPanel {
+  position:absolute;
+  top:20px;
+  left:10px;
+  background:#333;
+  padding:8px;
+  border-radius:8px;
+  width:150px;
+  font-size:13px;
+  z-index:5;
+}
+#actions {
+  margin-top:10px;
+  text-align:center;
+}
+#actions button {
+  display:block;
+  width:90%;
+  margin:5px auto;
+}
+.cooldown {
+  opacity:0.5;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<div id="viewport3D"></div>
+
+<div id="gameContainer">
+
+<div id="titleScreen">
+  <h1>DEMIURGE</h1>
+  <p>Shape lives, command worlds, become a god.</p>
+  <p id="highscore">High Score (AGE): 0</p>
+  <button onclick="startGame()">Enter</button>
+</div>
+
+<div id="game" style="display:none;">
+  <div id="gameDEMIURGE">DEMIURGE</div>
+  <h1 id="charName"></h1>
+  <p id="charMeaning"></p>
+  <div id="traitsPanel">
+    <p>💪 Strength: <span id="strength"></span></p>
+    <p>🧠 Intelligence: <span id="intelligence"></span></p>
+    <p>✨ Attribute: <span id="attribute"></span></p>
+    <p id="attributeEffect"></p>
+    <p>💰 Coins: <span id="coins"></span></p>
+    <p>AGE: <span id="age"></span></p>
+    <p>Lifespan: <span id="lifespan"></span></p>
+  </div>
+
+  <div id="viewport">
+    <div id="envLayer" class="layer"></div>
+    <div id="weatherLayer" class="layer"></div>
+    <div id="face">🙂</div>
+  </div>
+
+  <p>Environment: <span id="environment"></span></p>
+  <p>Weather: <span id="weather"></span></p>
+  <div class="stat">😊 Mood: <span id="mood"></span></div>
+  <div class="stat">💭 Thoughts: <span id="thoughts"></span></div>
+
+  <div id="actions"></div>
+
+  <div id="store">
+    <h2>🛒 Idol Store</h2>
+    <button onclick="buyItem()">Buy Random Buff (5 coins)</button>
+    <ul id="inventory"></ul>
+  </div>
+
+  <div id="quote">Welcome! Take care of your character.</div>
+  <div id="highscoreGame">High Score (AGE): 0</div>
+  <button onclick="generateLifeEvent()">Generate Life Event (20 💰)</button>
+</div>
+
+<div id="gameOverScreen" style="display:none;text-align:center;margin-top:20px;">
+  <h1>💀 Game Over 💀</h1>
+  <p id="finalScore">Your Score: 0 AGE</p>
+  <p id="finalHighScore">High Score: 0 AGE</p>
+  <p>Try again and see how long you can live!</p>
+  <button onclick="restartGame()">Play Again</button>
+</div>
+
+<script>
+// ===== Sample Names =====
+const names=[
+  {name:"Aaliyah",meaning:"Exalted"},
+  {name:"Aaron",meaning:"Mountain of strength"},
+  {name:"Abel",meaning:"Breath"},
+  {name:"Abigail",meaning:"Father's joy"},
+  {name:"Adeline",meaning:"Noble"},
+  {name:"Adrian",meaning:"Dark one"}
+];
+
+// ===== Thoughts =====
+const thoughtsPool={
+  Happy:["Feeling great today!","Life is wonderful.","Excited for adventure!"],
+  Sad:["Feeling tired.","Wish things were easier.","Missing someone."],
+  Angry:["Frustrated!","Why can't people understand?","I need to vent."],
+  Excited:["So much energy today!","Can't wait for this!","Everything is amazing!"],
+  Tired:["Need a nap.","Can't focus.","Want to rest."]
+};
+
+// ===== Buff Items =====
+const buffItems=[
+  {name:"Protein Shake: +2 Strength",strength:2,intelligence:0},
+  {name:"Book of Wisdom: +3 Intelligence",strength:0,intelligence:3},
+  {name:"Meditation Mat: +1 Strength +1 Intelligence",strength:1,intelligence:1},
+  {name:"Golden Idol: x2 Coins",effect:"multiplier",multiplier:2}
+];
+
+// ===== Life Events =====
+const lifeEvents=[
+  {desc:"Found a rare book, gained knowledge!",strength:0,intelligence:2},
+  {desc:"Got sick for a week, lost strength.",strength:-2,intelligence:0},
+  {desc:"Helped a friend, feel smarter.",strength:1,intelligence:1}
+];
+
+// ===== Attributes =====
+const attributes=[
+  {name:"Hyper Intelligent",desc:"+3 Intelligence, increases lifespan",strength:0,intelligence:3,lifespan:5},
+  {name:"Chronic Fatigue",desc:"-2 Strength, decreases lifespan",strength:-2,intelligence:0,lifespan:-5},
+  {name:"Lucky",desc:"+1 coin multiplier",effect:"multiplier",multiplier:2}
+];
+
+// ===== Variables =====
+let currentChar, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null;
+const envs=["City","Forest","Plains","Desert","Mountain"];
+const weathers=["Sunny","Rainy","Stormy","Foggy","Snowy"];
+const faces={"Happy":"🙂","Sad":"🙁","Angry":"😠","Excited":"😃","Tired":"😴"};
+let highScore=0;
+
+// ===== 3D Placeholder =====
+let scene,camera,renderer,humanModel=null;
+function init3D(){
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(75,document.getElementById("viewport3D").clientWidth/document.getElementById("viewport3D").clientHeight,0.1,1000);
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(document.getElementById("viewport3D").clientWidth,document.getElementById("viewport3D").clientHeight);
+  document.getElementById("viewport3D").appendChild(renderer.domElement);
+  const light=new THREE.DirectionalLight(0xffffff,1);
+  light.position.set(5,10,7);
+  scene.add(light);
+  camera.position.z=5;
+  animate3D();
+}
+function animate3D(){
+  requestAnimationFrame(animate3D);
+  renderer.render(scene,camera);
+}
+
+// ===== Game Functions =====
+function startGame(){
+  document.getElementById("titleScreen").style.display="none";
+  document.getElementById("game").style.display="block";
+  init3D();
+  generateCharacter();
+  setupActions();
+  tickLoop();
+}
+function generateCharacter(){
+  const idx=Math.floor(Math.random()*names.length);
+  currentChar=names[idx];
+  document.getElementById("charName").innerText=currentChar.name;
+  document.getElementById("charMeaning").innerText=currentChar.meaning;
+  characterAttribute=attributes[Math.floor(Math.random()*attributes.length)];
+  document.getElementById("attribute").innerText=characterAttribute.name;
+  document.getElementById("attributeEffect").innerText=characterAttribute.desc;
+  if(characterAttribute.strength) strength+=characterAttribute.strength;
+  if(characterAttribute.intelligence) intelligence+=characterAttribute.intelligence;
+  if(characterAttribute.lifespan) lifespan+=characterAttribute.lifespan;
+  if(characterAttribute.effect=="multiplier") coinMultiplier=characterAttribute.multiplier;
+  updateStats();
+}
+function updateStats(){
+  document.getElementById("strength").innerText=strength;
+  document.getElementById("intelligence").innerText=intelligence;
+  document.getElementById("coins").innerText=coins;
+  document.getElementById("age").innerText=age;
+  document.getElementById("lifespan").innerText=Math.floor(lifespan);
+  document.getElementById("mood").innerText=mood;
+  document.getElementById("thoughts").innerText=thoughts;
+  document.getElementById("highscoreGame").innerText="High Score (AGE): "+Math.floor(highScore);
+}
+function setupActions(){
+  const container=document.getElementById("actions");
+  container.innerHTML="";
+  const actionList=[
+    {name:"Feed",cost:0,func:()=>doAction("Feed"),cooldown:3},
+    {name:"Healthy Feed",cost:5,func:()=>doAction("Healthy Feed"),cooldown:5},
+    {name:"Train",cost:0,func:()=>doAction("Train"),cooldown:3},
+    {name:"Gym",cost:20,func:()=>doAction("Gym"),cooldown:5}
+  ];
+  actionList.forEach(a=>{
+    const btn=document.createElement("button");
+    btn.innerText=a.name+(a.cost? ` (${a.cost} 💰)`:"");
+    btn.onclick=()=>{
+      if(!btn.classList.contains("cooldown")){
+        a.func();
+        btn.classList.add("cooldown");
+        let time=a.cooldown;
+        const cdInt=setInterval(()=>{
+          time--;
+          btn.innerText=a.name+(a.cost? ` (${a.cost} 💰)`:"")+` (${time}s)`;
+          if(time<=0){ clearInterval(cdInt); btn.classList.remove("cooldown"); btn.innerText=a.name+(a.cost? ` (${a.cost} 💰)`:""); }
+        },1000);
+      }
+    };
+    container.appendChild(btn);
+  });
+}
+function doAction(action){
+  let coinGain=Math.random()<0.2?10:2;
+  coinGain*=coinMultiplier;
+  coinGain+=Math.floor(intelligence*0.1);
+  if(action=="Healthy Feed"){ if(coins>=5){ coins-=5; strength++; } else return alert("Not enough coins!"); }
+  if(action=="Gym"){ if(coins>=20){ coins-=20; strength+=2; lifespan+=0.5; } else return alert("Not enough coins!"); }
+  if(action=="Train"){ intelligence+=1; }
+  coins+=coinGain;
+  const moods=Object.keys(faces);
+  mood=moods[Math.floor(Math.random()*moods.length)];
+  thoughts=thoughtsPool[mood][Math.floor(Math.random()*thoughtsPool[mood].length)];
+  document.getElementById("face").innerText=faces[mood];
+  updateStats();
+}
+function buyItem(){
+  if(coins>=5){
+    coins-=5;
+    const item=buffItems[Math.floor(Math.random()*buffItems.length)];
+    if(item.effect=="multiplier") coinMultiplier=item.multiplier;
+    else { strength+=item.strength; intelligence+=item.intelligence; }
+    const li=document.createElement("li"); li.innerText=item.name;
+    document.getElementById("inventory").appendChild(li);
+    updateStats();
+  } else alert("Not enough coins!");
+}
+function generateLifeEvent(){
+  if(coins<20) return alert("Need 20 coins!");
+  coins-=20;
+  const evt=lifeEvents[Math.floor(Math.random()*lifeEvents.length)];
+  strength+=evt.strength;
+  intelligence+=evt.intelligence;
+  document.getElementById("quote").innerText=evt.desc;
+  updateStats();
+}
+function updateEnv(){
+  document.getElementById("environment").innerText=envs[Math.floor(Math.random()*envs.length)];
+  document.getElementById("weather").innerText=weathers[Math.floor(Math.random()*weathers.length)];
+}
+function tickLoop(){
+  const interval=setInterval(()=>{
+    age++;
+    lifespan+=strength*0.01;
+    coins+=Math.floor(intelligence*0.05);
+    updateEnv();
+    updateStats();
+    if(age>=lifespan){ clearInterval(interval); gameOver(); }
+  },4000);
+}
+function gameOver(){
+  document.getElementById("game").style.display="none";
+  document.getElementById("gameOverScreen").style.display="block";
+  document.getElementById("finalScore").innerText="Your Score: "+Math.floor(age)+" AGE";
+  if(age>highScore) highScore=age;
+  document.getElementById("finalHighScore").innerText="High Score: "+Math.floor(highScore)+" AGE";
+}
+function restartGame(){
+  coins=0; age=0; strength=5; intelligence=5; lifespan=50; coinMultiplier=1;
+  document.getElementById("gameOverScreen").style.display="none";
+  document.getElementById("game").style.display="block";
+  generateCharacter();
+  setupActions();
+  tickLoop();
+}
+</script>
+
+</body>
+</html>
