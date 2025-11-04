@@ -163,6 +163,7 @@ button:hover {
     <p>🧠 Intelligence: <span id="intelligence"></span></p>
     <p>✨ Attribute: <span id="attribute"></span></p>
     <p id="attributeEffect"></p>
+    <p>💼 Career: <span id="currentCareer"></span></p>
     <p>💰 Coins: <span id="coins"></span></p>
     <p>AGE: <span id="age"></span></p>
     <p>Lifespan: <span id="lifespan"></span></p>
@@ -185,6 +186,11 @@ button:hover {
     <h2>🛒 Idol Store</h2>
     <button onclick="buyItem()">Buy Random Buff (5 coins)</button>
     <ul id="inventory"></ul>
+  </div>
+
+  <div id="careers">
+    <h2>💼 Careers</h2>
+    <div id="careerList"></div>
   </div>
 
   <div id="quote">Welcome! Take care of your character.</div>
@@ -252,8 +258,42 @@ const attributes=[
   {name:"Unlucky",desc:"No coin multiplier",effect:"multiplier",multiplier:1}
 ];
 
+// ===== Careers =====
+const careers = [
+  {
+    name: "Unemployed",
+    description: "No job. Basic income.",
+    requirements: { strength: 0, intelligence: 0 },
+    income: 1
+  },
+  {
+    name: "Personal Trainer",
+    description: "Requires 10 strength.",
+    requirements: { strength: 10, intelligence: 0 },
+    income: 5
+  },
+  {
+    name: "Software Developer",
+    description: "Requires 10 intelligence.",
+    requirements: { strength: 0, intelligence: 10 },
+    income: 5
+  },
+  {
+    name: "Athlete",
+    description: "Requires 20 strength.",
+    requirements: { strength: 20, intelligence: 0 },
+    income: 10
+  },
+  {
+    name: "Scientist",
+    description: "Requires 20 intelligence.",
+    requirements: { strength: 0, intelligence: 20 },
+    income: 10
+  }
+];
+
 // ===== Variables =====
-let currentChar, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null;
+let currentChar, currentCareer, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null;
 const envs=["City","Forest","Plains","Desert","Mountain"];
 const weathers=["Sunny","Rainy","Stormy","Foggy","Snowy"];
 const faces={"Happy":"🙂","Sad":"🙁","Angry":"😠","Excited":"😃","Tired":"😴"};
@@ -290,6 +330,7 @@ function startGame(){
   init3D();
   generateCharacter();
   setupActions();
+  setupCareers();
   tickLoop();
 }
 function generateCharacter(){
@@ -304,6 +345,7 @@ function generateCharacter(){
   if(characterAttribute.intelligence) intelligence+=characterAttribute.intelligence;
   if(characterAttribute.lifespan) lifespan+=characterAttribute.lifespan;
   if(characterAttribute.effect=="multiplier") coinMultiplier=characterAttribute.multiplier;
+  currentCareer = careers[0];
   updateStats();
 }
 function updateStats(){
@@ -315,7 +357,26 @@ function updateStats(){
   document.getElementById("mood").innerText=mood;
   document.getElementById("thoughts").innerText=thoughts;
   document.getElementById("highscoreGame").innerText="High Score (AGE): "+Math.floor(highScore);
+  document.getElementById("currentCareer").innerText=currentCareer.name;
 }
+function setupCareers(){
+  const container=document.getElementById("careerList");
+  container.innerHTML="";
+  careers.forEach(c=>{
+    const btn=document.createElement("button");
+    btn.innerText=c.name+" ("+c.description+")";
+    btn.onclick=()=>{
+      if(strength >= c.requirements.strength && intelligence >= c.requirements.intelligence){
+        currentCareer = c;
+        updateStats();
+      } else {
+        alert("You do not meet the requirements for this career.");
+      }
+    };
+    container.appendChild(btn);
+  });
+}
+
 function setupActions(){
   const container=document.getElementById("actions");
   container.innerHTML="";
@@ -388,7 +449,7 @@ function tickLoop(){
     if(age > 40){
       strength -= 0.1;
     }
-    coins+=Math.floor(intelligence*0.05);
+    coins += currentCareer.income;
     updateEnv();
     updateStats();
     if(age>=lifespan){ clearInterval(interval); gameOver(); }
@@ -406,10 +467,12 @@ function gameOver(){
 }
 function restartGame(){
   coins=0; age=0; strength=5; intelligence=5; lifespan=50; coinMultiplier=1;
+  document.getElementById("inventory").innerHTML = "";
   document.getElementById("gameOverScreen").style.display="none";
   document.getElementById("game").style.display="block";
   generateCharacter();
   setupActions();
+  setupCareers();
   tickLoop();
 }
 </script>
