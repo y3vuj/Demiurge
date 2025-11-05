@@ -183,6 +183,13 @@ button:hover {
 
   <div id="actions"></div>
 
+  <div id="careerPanel">
+    <h2>Career</h2>
+    <p>Current Career: <span id="currentCareer">Unemployed</span></p>
+    <p>Passive Income: <span id="passiveIncome">0</span></p>
+    <button onclick="chooseCareer()">Choose Career</button>
+  </div>
+
   <div id="store">
     <h2>🛒 Idol Store</h2>
     <button onclick="buyItem()">Buy Random Buff (5 coins)</button>
@@ -244,8 +251,18 @@ const attributes=[
   {name:"Lucky",desc:"+1 coin multiplier",effect:"multiplier",multiplier:2}
 ];
 
+// ===== Careers =====
+const careers = [
+  { name: "Laborer", requirements: { strength: 5 }, income: 5 },
+  { name: "Scribe", requirements: { intelligence: 5 }, income: 5 },
+  { name: "Warrior", requirements: { strength: 10 }, income: 10 },
+  { name: "Scholar", requirements: { intelligence: 10 }, income: 10 },
+  { name: "Mage", requirements: { strength: 5, intelligence: 15 }, income: 20 },
+  { name: "Warlord", requirements: { strength: 15, intelligence: 5 }, income: 20 }
+];
+
 // ===== Variables =====
-let currentChar, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null;
+let currentChar, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null, currentCareer = null;
 const envs=["City","Forest","Plains","Desert","Mountain"];
 const weathers=["Sunny","Rainy","Stormy","Foggy","Snowy"];
 const faces={"Happy":"🙂","Sad":"🙁","Angry":"😠","Excited":"😃","Tired":"😴"};
@@ -302,6 +319,31 @@ function updateStats(){
   document.getElementById("mood").innerText=mood;
   document.getElementById("thoughts").innerText=thoughts;
   document.getElementById("highscoreGame").innerText="High Score (AGE): "+Math.floor(highScore);
+}
+function chooseCareer() {
+  const availableCareers = careers.filter(career => {
+    return Object.keys(career.requirements).every(req => {
+      if (req === 'strength') return strength >= career.requirements[req];
+      if (req === 'intelligence') return intelligence >= career.requirements[req];
+      return false;
+    });
+  });
+
+  const careerChoice = prompt(
+    "Choose a career:\n" +
+    availableCareers.map(c => `${c.name} (Requires: Str ${c.requirements.strength || 0}, Int ${c.requirements.intelligence || 0})`).join("\n")
+  );
+
+  if (careerChoice) {
+    const selectedCareer = availableCareers.find(c => c.name.toLowerCase() === careerChoice.toLowerCase());
+    if (selectedCareer) {
+      currentCareer = selectedCareer;
+      document.getElementById("currentCareer").innerText = currentCareer.name;
+      document.getElementById("passiveIncome").innerText = currentCareer.income;
+    } else {
+      alert("Invalid career choice or requirements not met.");
+    }
+  }
 }
 function setupActions(){
   const container=document.getElementById("actions");
@@ -373,6 +415,9 @@ function tickLoop(){
     age++;
     lifespan+=strength*0.01;
     coins+=Math.floor(intelligence*0.05);
+    if (currentCareer) {
+      coins += currentCareer.income;
+    }
     updateEnv();
     updateStats();
     if(age>=lifespan){ clearInterval(interval); gameOver(); }
@@ -386,7 +431,9 @@ function gameOver(){
   document.getElementById("finalHighScore").innerText="High Score: "+Math.floor(highScore)+" AGE";
 }
 function restartGame(){
-  coins=0; age=0; strength=5; intelligence=5; lifespan=50; coinMultiplier=1;
+  coins=0; age=0; strength=5; intelligence=5; lifespan=50; coinMultiplier=1; currentCareer = null;
+  document.getElementById("currentCareer").innerText = "Unemployed";
+  document.getElementById("passiveIncome").innerText = 0;
   document.getElementById("gameOverScreen").style.display="none";
   document.getElementById("game").style.display="block";
   generateCharacter();
