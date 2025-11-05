@@ -197,6 +197,7 @@ button:hover {
   </div>
 
   <div id="store">
+    <button onclick="toggleHelp()">Help</button>
     <h2>🛒 Idol Store</h2>
     <button onclick="buyItem()">Buy Random Buff (5 coins)</button>
     <ul id="inventory"></ul>
@@ -205,6 +206,30 @@ button:hover {
   <div id="quote">Welcome! Take care of your character.</div>
   <div id="highscoreGame">High Score (AGE): 0</div>
   <button onclick="generateLifeEvent()">Generate Life Event (20 💰)</button>
+</div>
+
+<div id="helpModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:10;">
+  <div style="background:#333; padding:20px; border-radius:8px; width:80%; max-width:600px; max-height:80%; overflow-y:auto;">
+    <h2>How to Play DEMIURGE</h2>
+    <p><strong>Goal:</strong> Guide your character to live as long and successfully as possible.</p>
+    <h3>Core Stats</h3>
+    <ul>
+      <li><strong>💪 Strength:</strong> Affects physical abilities and lifespan. Increase it by working out.</li>
+      <li><strong>🧠 Intelligence:</strong> Affects learning, income, and problem-solving. Increase it by training.</li>
+      <li><strong>💰 Coins:</strong> The currency used to buy items and services.</li>
+      <li><strong>AGE:</strong> Your character's current age.</li>
+      <li><strong>Lifespan:</strong> The age your character is expected to live to. This can change based on your actions.</li>
+    </ul>
+    <h3>Careers</h3>
+    <p>Once you meet the stat and education requirements, you can choose a career to earn passive income. Better careers require higher stats and education.</p>
+    <h3>Education</h3>
+    <p>Enroll in school to permanently increase your intelligence and unlock advanced careers. Education costs coins and takes time (game ticks).</p>
+    <h3>Actions</h3>
+    <p>Perform actions like "Feed" or "Train" to manage your character's stats. Some actions have a coin cost or a cooldown period.</p>
+    <h3>Store</h3>
+    <p>Buy items from the Idol Store to get powerful buffs that can increase your stats or provide other benefits.</p>
+    <button onclick="toggleHelp()">Close</button>
+  </div>
 </div>
 
 <div id="gameOverScreen" style="display:none;text-align:center;margin-top:20px;">
@@ -227,7 +252,11 @@ const names=[
   {name:"Bella", meaning:"Beautiful"},
   {name:"Caleb", meaning:"Faithful"},
   {name:"Daisy", meaning:"Day's eye"},
-  {name:"Elijah", meaning:"My God is Yahweh"}
+  {name:"Elijah", meaning:"My God is Yahweh"},
+  {name:"Fiona", meaning:"White, fair"},
+  {name:"Gabriel", meaning:"God is my strength"},
+  {name:"Hailey", meaning:"Hay's meadow"},
+  {name:"Isaac", meaning:"He will laugh"}
 ];
 
 // ===== Thoughts =====
@@ -238,7 +267,9 @@ const thoughtsPool={
   Excited:["So much energy today!","Can't wait for this!","Everything is amazing!"],
   Tired:["Need a nap.","Can't focus.","Want to rest."],
   Peaceful: ["Feeling calm and content.", "The world is quiet today.", "A moment of zen."],
-  Anxious: ["So much to do, so little time.", "I hope I'm making the right choices.", "My heart is racing."]
+  Anxious: ["So much to do, so little time.", "I hope I'm making the right choices.", "My heart is racing."],
+  Confident: ["I can do anything I set my mind to.", "Today is my day.", "I feel unstoppable."],
+  Inspired: ["I have a great new idea!", "The world is full of possibilities.", "I want to create something beautiful."]
 };
 
 // ===== Buff Items =====
@@ -284,10 +315,10 @@ const educationPrograms = [
 ];
 
 // ===== Variables =====
-let currentChar, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null, currentCareer = null, educationLevel = "None", currentEducation = null;
+let currentChar, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null, currentCareer = null, educationLevel = "None", currentEducation = null, inventory = {};
 const envs=["City","Forest","Plains","Desert","Mountain"];
 const weathers=["Sunny","Rainy","Stormy","Foggy","Snowy"];
-const faces={"Happy":"🙂","Sad":"🙁","Angry":"😠","Excited":"😃","Tired":"😴", "Peaceful": "😌", "Anxious": "😟"};
+const faces={"Happy":"🙂","Sad":"🙁","Angry":"😠","Excited":"😃","Tired":"😴", "Peaceful": "😌", "Anxious": "😟", "Confident": "😎", "Inspired": "🤩"};
 let highScore=0;
 
 // ===== 3D Placeholder =====
@@ -315,7 +346,7 @@ function startGame(){
   document.getElementById("game").style.display="block";
   init3D();
   generateCharacter();
-  setupActions();
+  updateAvailableActions();
   tickLoop();
 }
 function generateCharacter(){
@@ -403,31 +434,49 @@ function enrollInSchool() {
     }
   }
 }
-function setupActions(){
-  const container=document.getElementById("actions");
-  container.innerHTML="";
-  const actionList=[
-    {name:"Feed",cost:0,func:()=>doAction("Feed"),cooldown:3},
-    {name:"Healthy Feed",cost:5,func:()=>doAction("Healthy Feed"),cooldown:5},
-    {name:"Train",cost:0,func:()=>doAction("Train"),cooldown:3},
-    {name:"Gym",cost:20,func:()=>doAction("Gym"),cooldown:5}
-  ];
-  actionList.forEach(a=>{
-    const btn=document.createElement("button");
-    btn.innerText=a.name+(a.cost? ` (${a.cost} 💰)`:"");
-    btn.onclick=()=>{
-      if(!btn.classList.contains("cooldown")){
-        a.func();
-        btn.classList.add("cooldown");
-        let time=a.cooldown;
-        const cdInt=setInterval(()=>{
-          time--;
-          btn.innerText=a.name+(a.cost? ` (${a.cost} 💰)`:"")+` (${time}s)`;
-          if(time<=0){ clearInterval(cdInt); btn.classList.remove("cooldown"); btn.innerText=a.name+(a.cost? ` (${a.cost} 💰)`:""); }
-        },1000);
-      }
-    };
-    container.appendChild(btn);
+function toggleHelp() {
+  const modal = document.getElementById("helpModal");
+  modal.style.display = modal.style.display === "none" ? "flex" : "none";
+}
+const allActions = [
+  {name:"Feed",cost:0,func:()=>doAction("Feed"),cooldown:3},
+  {name:"Healthy Feed",cost:5,func:()=>doAction("Healthy Feed"),cooldown:5},
+  {name:"Train",cost:0,func:()=>doAction("Train"),cooldown:3},
+  {name:"Gym",cost:20,func:()=>doAction("Gym"),cooldown:5},
+  {name:"Meditate",cost:10,func:()=>doAction("Meditate"),cooldown:10, unlockedAtAge: 30}
+];
+
+
+function updateAvailableActions() {
+  const container = document.getElementById("actions");
+  container.innerHTML = ""; // Clear existing actions
+
+  allActions.forEach(a => {
+    let unlocked = true;
+    if (a.unlockedAtAge && age < a.unlockedAtAge) unlocked = false;
+    if (a.requiresCareer && (!currentCareer || currentCareer.name !== a.requiresCareer)) unlocked = false;
+
+    if (unlocked) {
+      const btn = document.createElement("button");
+      btn.innerText = a.name + (a.cost ? ` (${a.cost} 💰)` : "");
+      btn.onclick = () => {
+        if (!btn.classList.contains("cooldown")) {
+          a.func();
+          btn.classList.add("cooldown");
+          let time = a.cooldown;
+          const cdInt = setInterval(() => {
+            time--;
+            btn.innerText = a.name + (a.cost ? ` (${a.cost} 💰)` : "") + ` (${time}s)`;
+            if (time <= 0) {
+              clearInterval(cdInt);
+              btn.classList.remove("cooldown");
+              btn.innerText = a.name + (a.cost ? ` (${a.cost} 💰)` : "");
+            }
+          }, 1000);
+        }
+      };
+      container.appendChild(btn);
+    }
   });
 }
 function doAction(action){
@@ -436,6 +485,7 @@ function doAction(action){
   coinGain+=Math.floor(intelligence*0.1);
   if(action=="Healthy Feed"){ if(coins>=5){ coins-=5; strength++; } else return alert("Not enough coins!"); }
   if(action=="Gym"){ if(coins>=20){ coins-=20; strength+=2; lifespan+=0.5; } else return alert("Not enough coins!"); }
+  if(action=="Meditate"){ if(coins>=10){ coins-=10; lifespan+=1; } else return alert("Not enough coins!"); }
   if(action=="Train"){ intelligence+=1; }
   coins+=coinGain;
   updateStats();
@@ -447,18 +497,35 @@ function updateMoodAndThoughts() {
   thoughts = thoughtsPool[mood][Math.floor(Math.random() * thoughtsPool[mood].length)];
   document.getElementById("face").innerText = faces[mood];
 }
+
+function renderInventory() {
+  const inventoryList = document.getElementById("inventory");
+  inventoryList.innerHTML = "";
+  for (const itemName in inventory) {
+    const li = document.createElement("li");
+    li.innerText = `${itemName} x${inventory[itemName]}`;
+    inventoryList.appendChild(li);
+  }
+}
+
 function buyItem(){
   if(coins>=5){
     coins-=5;
     const item=buffItems[Math.floor(Math.random()*buffItems.length)];
+
+    if (inventory[item.name]) {
+      inventory[item.name]++;
+    } else {
+      inventory[item.name] = 1;
+    }
+
     if(item.effect=="multiplier") coinMultiplier=item.multiplier;
     else {
       if (item.strength) strength += item.strength;
       if (item.intelligence) intelligence += item.intelligence;
       if (item.lifespan) lifespan += item.lifespan;
     }
-    const li=document.createElement("li"); li.innerText=item.name;
-    document.getElementById("inventory").appendChild(li);
+    renderInventory();
     updateStats();
   } else alert("Not enough coins!");
 }
@@ -498,6 +565,7 @@ function tickLoop(){
     if (Math.random() < 0.3) {
       updateMoodAndThoughts();
     }
+    updateAvailableActions();
     updateEnv();
     updateStats();
     if(age>=lifespan){ clearInterval(interval); gameOver(); }
@@ -511,14 +579,15 @@ function gameOver(){
   document.getElementById("finalHighScore").innerText="High Score: "+Math.floor(highScore)+" AGE";
 }
 function restartGame(){
-  coins=0; age=0; strength=5; intelligence=5; lifespan=50; coinMultiplier=1; currentCareer = null; educationLevel = "None"; currentEducation = null;
+  coins=0; age=0; strength=5; intelligence=5; lifespan=50; coinMultiplier=1; currentCareer = null; educationLevel = "None"; currentEducation = null; inventory = {};
   document.getElementById("currentCareer").innerText = "Unemployed";
   document.getElementById("passiveIncome").innerText = 0;
   document.getElementById("educationLevel").innerText = "None";
+  renderInventory();
   document.getElementById("gameOverScreen").style.display="none";
   document.getElementById("game").style.display="block";
   generateCharacter();
-  setupActions();
+  updateAvailableActions();
   tickLoop();
 }
 </script>
