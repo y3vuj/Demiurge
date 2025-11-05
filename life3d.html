@@ -12,22 +12,13 @@
 body {
   margin:0;
   height:100vh;
-  display:flex;
   background:#222;
   color:#fff;
   font-family: monospace;
   overflow:hidden;
 }
-#viewport3D {
-  flex:2;
-  background:#111;
-  margin:20px;
-  border-radius:8px;
-  height: calc(100vh - 40px);
-}
 #gameContainer {
-  flex:1;
-  width:33%;
+  width:100%;
   margin:20px;
   overflow-y:auto;
   position:relative;
@@ -144,8 +135,6 @@ button:hover {
 </style>
 </head>
 <body>
-
-<div id="viewport3D"></div>
 
 <div id="gameContainer">
 
@@ -321,30 +310,10 @@ const weathers=["Sunny","Rainy","Stormy","Foggy","Snowy"];
 const faces={"Happy":"🙂","Sad":"🙁","Angry":"😠","Excited":"😃","Tired":"😴", "Peaceful": "😌", "Anxious": "😟", "Confident": "😎", "Inspired": "🤩"};
 let highScore=0;
 
-// ===== 3D Placeholder =====
-let scene,camera,renderer,humanModel=null;
-function init3D(){
-  scene=new THREE.Scene();
-  camera=new THREE.PerspectiveCamera(75,document.getElementById("viewport3D").clientWidth/document.getElementById("viewport3D").clientHeight,0.1,1000);
-  renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(document.getElementById("viewport3D").clientWidth,document.getElementById("viewport3D").clientHeight);
-  document.getElementById("viewport3D").appendChild(renderer.domElement);
-  const light=new THREE.DirectionalLight(0xffffff,1);
-  light.position.set(5,10,7);
-  scene.add(light);
-  camera.position.z=5;
-  animate3D();
-}
-function animate3D(){
-  requestAnimationFrame(animate3D);
-  renderer.render(scene,camera);
-}
-
 // ===== Game Functions =====
 function startGame(){
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("game").style.display="block";
-  init3D();
   generateCharacter();
   updateAvailableActions();
   tickLoop();
