@@ -190,6 +190,12 @@ button:hover {
     <button onclick="chooseCareer()">Choose Career</button>
   </div>
 
+  <div id="educationPanel">
+    <h2>🎓 Education</h2>
+    <p>Level: <span id="educationLevel">None</span></p>
+    <button onclick="enrollInSchool()">Enroll in School</button>
+  </div>
+
   <div id="store">
     <h2>🛒 Idol Store</h2>
     <button onclick="buyItem()">Buy Random Buff (5 coins)</button>
@@ -217,7 +223,11 @@ const names=[
   {name:"Abel",meaning:"Breath"},
   {name:"Abigail",meaning:"Father's joy"},
   {name:"Adeline",meaning:"Noble"},
-  {name:"Adrian",meaning:"Dark one"}
+  {name:"Adrian",meaning:"Dark one"},
+  {name:"Bella", meaning:"Beautiful"},
+  {name:"Caleb", meaning:"Faithful"},
+  {name:"Daisy", meaning:"Day's eye"},
+  {name:"Elijah", meaning:"My God is Yahweh"}
 ];
 
 // ===== Thoughts =====
@@ -226,7 +236,9 @@ const thoughtsPool={
   Sad:["Feeling tired.","Wish things were easier.","Missing someone."],
   Angry:["Frustrated!","Why can't people understand?","I need to vent."],
   Excited:["So much energy today!","Can't wait for this!","Everything is amazing!"],
-  Tired:["Need a nap.","Can't focus.","Want to rest."]
+  Tired:["Need a nap.","Can't focus.","Want to rest."],
+  Peaceful: ["Feeling calm and content.", "The world is quiet today.", "A moment of zen."],
+  Anxious: ["So much to do, so little time.", "I hope I'm making the right choices.", "My heart is racing."]
 };
 
 // ===== Buff Items =====
@@ -234,14 +246,18 @@ const buffItems=[
   {name:"Protein Shake: +2 Strength",strength:2,intelligence:0},
   {name:"Book of Wisdom: +3 Intelligence",strength:0,intelligence:3},
   {name:"Meditation Mat: +1 Strength +1 Intelligence",strength:1,intelligence:1},
-  {name:"Golden Idol: x2 Coins",effect:"multiplier",multiplier:2}
+  {name:"Golden Idol: x2 Coins",effect:"multiplier",multiplier:2},
+  {name:"Energy Drink: +1 Lifespan", lifespan: 1},
+  {name:"Ancient Tome: +5 Intelligence", intelligence: 5}
 ];
 
 // ===== Life Events =====
 const lifeEvents=[
   {desc:"Found a rare book, gained knowledge!",strength:0,intelligence:2},
   {desc:"Got sick for a week, lost strength.",strength:-2,intelligence:0},
-  {desc:"Helped a friend, feel smarter.",strength:1,intelligence:1}
+  {desc:"Helped a friend, feel smarter.",strength:1,intelligence:1},
+  {desc:"Survived a natural disaster.", strength: 1, intelligence: 1},
+  {desc:"Won a lottery, gained 50 coins.", coins: 50}
 ];
 
 // ===== Attributes =====
@@ -256,16 +272,22 @@ const careers = [
   { name: "Laborer", requirements: { strength: 5 }, income: 5 },
   { name: "Scribe", requirements: { intelligence: 5 }, income: 5 },
   { name: "Warrior", requirements: { strength: 10 }, income: 10 },
-  { name: "Scholar", requirements: { intelligence: 10 }, income: 10 },
-  { name: "Mage", requirements: { strength: 5, intelligence: 15 }, income: 20 },
+  { name: "Scholar", requirements: { intelligence: 10, education: "High School" }, income: 15 },
+  { name: "Mage", requirements: { strength: 5, intelligence: 15, education: "University" }, income: 25 },
   { name: "Warlord", requirements: { strength: 15, intelligence: 5 }, income: 20 }
 ];
 
+// ===== Education =====
+const educationPrograms = [
+  { name: "High School", cost: 100, duration: 4, intelligenceBonus: 5 },
+  { name: "University", cost: 500, duration: 4, intelligenceBonus: 10 }
+];
+
 // ===== Variables =====
-let currentChar, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null, currentCareer = null;
+let currentChar, coins=0, age=0, lifespan=50, strength=5, intelligence=5, mood="Happy", thoughts="", actionsState={}, coinMultiplier=1, characterAttribute=null, currentCareer = null, educationLevel = "None", currentEducation = null;
 const envs=["City","Forest","Plains","Desert","Mountain"];
 const weathers=["Sunny","Rainy","Stormy","Foggy","Snowy"];
-const faces={"Happy":"🙂","Sad":"🙁","Angry":"😠","Excited":"😃","Tired":"😴"};
+const faces={"Happy":"🙂","Sad":"🙁","Angry":"😠","Excited":"😃","Tired":"😴", "Peaceful": "😌", "Anxious": "😟"};
 let highScore=0;
 
 // ===== 3D Placeholder =====
@@ -325,6 +347,7 @@ function chooseCareer() {
     return Object.keys(career.requirements).every(req => {
       if (req === 'strength') return strength >= career.requirements[req];
       if (req === 'intelligence') return intelligence >= career.requirements[req];
+      if (req === 'education') return educationLevel === career.requirements[req];
       return false;
     });
   });
@@ -342,6 +365,41 @@ function chooseCareer() {
       document.getElementById("passiveIncome").innerText = currentCareer.income;
     } else {
       alert("Invalid career choice or requirements not met.");
+    }
+  }
+}
+
+function enrollInSchool() {
+  if (currentEducation) {
+    alert("You are already enrolled in a program.");
+    return;
+  }
+
+  const availablePrograms = educationPrograms.filter(program => {
+    if (educationLevel === "None" && program.name === "High School") return true;
+    if (educationLevel === "High School" && program.name === "University") return true;
+    return false;
+  });
+
+  if (availablePrograms.length === 0) {
+    alert("No available education programs.");
+    return;
+  }
+
+  const programChoice = prompt(
+    "Choose a program:\n" +
+    availablePrograms.map(p => `${p.name} (Cost: ${p.cost}, Duration: ${p.duration} years)`).join("\n")
+  );
+
+  if (programChoice) {
+    const selectedProgram = availablePrograms.find(p => p.name.toLowerCase() === programChoice.toLowerCase());
+
+    if (selectedProgram && coins >= selectedProgram.cost) {
+      coins -= selectedProgram.cost;
+      currentEducation = { ...selectedProgram, progress: 0 };
+      document.getElementById("educationLevel").innerText = `${selectedProgram.name} (In Progress)`;
+    } else {
+      alert("Invalid choice or not enough coins.");
     }
   }
 }
@@ -380,18 +438,25 @@ function doAction(action){
   if(action=="Gym"){ if(coins>=20){ coins-=20; strength+=2; lifespan+=0.5; } else return alert("Not enough coins!"); }
   if(action=="Train"){ intelligence+=1; }
   coins+=coinGain;
-  const moods=Object.keys(faces);
-  mood=moods[Math.floor(Math.random()*moods.length)];
-  thoughts=thoughtsPool[mood][Math.floor(Math.random()*thoughtsPool[mood].length)];
-  document.getElementById("face").innerText=faces[mood];
   updateStats();
+}
+
+function updateMoodAndThoughts() {
+  const moods = Object.keys(faces);
+  mood = moods[Math.floor(Math.random() * moods.length)];
+  thoughts = thoughtsPool[mood][Math.floor(Math.random() * thoughtsPool[mood].length)];
+  document.getElementById("face").innerText = faces[mood];
 }
 function buyItem(){
   if(coins>=5){
     coins-=5;
     const item=buffItems[Math.floor(Math.random()*buffItems.length)];
     if(item.effect=="multiplier") coinMultiplier=item.multiplier;
-    else { strength+=item.strength; intelligence+=item.intelligence; }
+    else {
+      if (item.strength) strength += item.strength;
+      if (item.intelligence) intelligence += item.intelligence;
+      if (item.lifespan) lifespan += item.lifespan;
+    }
     const li=document.createElement("li"); li.innerText=item.name;
     document.getElementById("inventory").appendChild(li);
     updateStats();
@@ -401,8 +466,9 @@ function generateLifeEvent(){
   if(coins<20) return alert("Need 20 coins!");
   coins-=20;
   const evt=lifeEvents[Math.floor(Math.random()*lifeEvents.length)];
-  strength+=evt.strength;
-  intelligence+=evt.intelligence;
+  if (evt.strength) strength += evt.strength;
+  if (evt.intelligence) intelligence += evt.intelligence;
+  if (evt.coins) coins += evt.coins;
   document.getElementById("quote").innerText=evt.desc;
   updateStats();
 }
@@ -418,6 +484,20 @@ function tickLoop(){
     if (currentCareer) {
       coins += currentCareer.income;
     }
+
+    if (currentEducation) {
+      currentEducation.progress++;
+      if (currentEducation.progress >= currentEducation.duration) {
+        educationLevel = currentEducation.name;
+        intelligence += currentEducation.intelligenceBonus;
+        document.getElementById("educationLevel").innerText = educationLevel;
+        currentEducation = null;
+      }
+    }
+
+    if (Math.random() < 0.3) {
+      updateMoodAndThoughts();
+    }
     updateEnv();
     updateStats();
     if(age>=lifespan){ clearInterval(interval); gameOver(); }
@@ -431,9 +511,10 @@ function gameOver(){
   document.getElementById("finalHighScore").innerText="High Score: "+Math.floor(highScore)+" AGE";
 }
 function restartGame(){
-  coins=0; age=0; strength=5; intelligence=5; lifespan=50; coinMultiplier=1; currentCareer = null;
+  coins=0; age=0; strength=5; intelligence=5; lifespan=50; coinMultiplier=1; currentCareer = null; educationLevel = "None"; currentEducation = null;
   document.getElementById("currentCareer").innerText = "Unemployed";
   document.getElementById("passiveIncome").innerText = 0;
+  document.getElementById("educationLevel").innerText = "None";
   document.getElementById("gameOverScreen").style.display="none";
   document.getElementById("game").style.display="block";
   generateCharacter();
